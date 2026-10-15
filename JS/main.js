@@ -227,7 +227,7 @@
 
                 message += `\n*Total a pagar: $${total}*\n\n¡Espero su respuesta para coordinar la entrega en Chivacoa, Yaracuy!`;
 
-                const phoneNumber = "584120000000"; 
+                const phoneNumber = "584245628866"; 
                 const encodedMessage = encodeURIComponent(message);
                 window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
             });
