@@ -1,22 +1,27 @@
-const menuBtn = document.getElementById('menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-
-    menuBtn.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
-    });
 
     document.addEventListener('DOMContentLoaded', function () {
         const filterButtons = document.querySelectorAll('.filter-btn');
         const productCards = document.querySelectorAll('.product-card');
         const searchInput = document.getElementById('search-input');
+        
         const navNovedades = document.getElementById('nav-novedades');
         const navRebajas = document.getElementById('nav-rebajas');
+        const navNovedadesMobile = document.getElementById('nav-novedades-mobile');
+        const navRebajasMobile = document.getElementById('nav-rebajas-mobile');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuBtn = document.getElementById('menu-btn');
+
+        // Menú móvil
+        if (menuBtn && mobileMenu) {
+            menuBtn.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
 
         // --- FUNCIÓN CENTRALIZADA DE FILTRADO Y BÚSQUEDA ---
         function filterProducts(categoryOverride = null) {
             const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
             
-            // Determinar qué categoría está activa
             let activeCategory = categoryOverride;
             if (!activeCategory) {
                 const activeBtn = document.querySelector('.filter-btn.text-black');
@@ -25,25 +30,27 @@ const menuBtn = document.getElementById('menu-btn');
 
             productCards.forEach(card => {
                 const cardCategory = card.getAttribute('data-category');
-                const cardTitle = card.querySelector('h3').innerText.toLowerCase();
-                const cardDesc = card.querySelector('p').innerText.toLowerCase();
+                const titleEl = card.querySelector('h3');
+                const descEl = card.querySelector('p');
+                
+                const cardTitle = titleEl ? titleEl.innerText.toLowerCase() : '';
+                const cardDesc = descEl ? descEl.innerText.toLowerCase() : '';
 
-                // Validación cruzada: categoría + texto de búsqueda
                 const matchesCategory = (activeCategory === 'all' || cardCategory === activeCategory);
                 const matchesSearch = cardTitle.includes(searchTerm) || cardDesc.includes(searchTerm);
 
+                // Usamos la clase 'hidden' de Tailwind en lugar de style.display para mayor compatibilidad
                 if (matchesCategory && matchesSearch) {
-                    card.style.display = 'flex';
+                    card.classList.remove('hidden');
                 } else {
-                    card.style.display = 'none';
+                    card.classList.add('hidden');
                 }
             });
         }
 
-        // --- 1. LÓGICA DE LOS BOTONES DE FILTRO DE ABAJO ---
+        // Botones de filtro inferiores
         filterButtons.forEach(button => {
             button.addEventListener('click', function () {
-                // Cambiar estilos visuales de los botones
                 filterButtons.forEach(btn => {
                     btn.classList.remove('text-black', 'border-b-2', 'border-black');
                     btn.classList.add('text-gray-600');
@@ -51,20 +58,18 @@ const menuBtn = document.getElementById('menu-btn');
                 this.classList.remove('text-gray-600');
                 this.classList.add('text-black', 'border-b-2', 'border-black');
 
-                // Filtrar productos según el botón presionado
                 const filterValue = this.getAttribute('data-filter');
                 filterProducts(filterValue);
             });
         });
 
-        // --- 2. BUSCADOR EN TIEMPO REAL ---
+        // Buscador en tiempo real
         if (searchInput) {
             searchInput.addEventListener('input', () => filterProducts());
         }
 
-        // --- 3. CONEXIÓN CON LOS ENLACES DEL NAVBAR ---
+        // Sincronización Navbar (Escritorio y Móvil)
         function triggerNavFilter(filterName) {
-            // Sincronizar visualmente los botones de abajo para que reflejen la selección del Navbar
             filterButtons.forEach(btn => {
                 if (btn.getAttribute('data-filter') === filterName) {
                     btn.classList.remove('text-gray-600');
@@ -75,7 +80,7 @@ const menuBtn = document.getElementById('menu-btn');
                 }
             });
 
-            if (searchInput) searchInput.value = ''; // Limpiar buscador para mejor experiencia
+            if (searchInput) searchInput.value = '';
             filterProducts(filterName);
         }
 
@@ -95,43 +100,25 @@ const menuBtn = document.getElementById('menu-btn');
             });
         }
 
-        // --- 4. VISUALIZADOR DE IMAGEN (MODAL) ---
-        const modal = document.getElementById('image-modal');
-        const modalImg = document.getElementById('modal-img');
-        const modalTitle = document.getElementById('modal-title');
-        const closeModal = document.getElementById('close-modal');
-        const productImages = document.querySelectorAll('.product-card img');
-
-        productImages.forEach(img => {
-            img.classList.add('cursor-pointer');
-            img.addEventListener('click', function () {
-                const imgSrc = this.getAttribute('src');
-                const card = this.closest('.product-card');
-                const title = card.querySelector('h3').innerText;
-
-                modalImg.setAttribute('src', imgSrc);
-                modalTitle.innerText = title;
-                modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            });
-        });
-
-        function hideModal() {
-            modal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-
-        if (closeModal) closeModal.addEventListener('click', hideModal);
-        if (modal) {
-            modal.addEventListener('click', function (e) {
-                if (e.target === modal) hideModal();
+        if (navNovedadesMobile) {
+            navNovedadesMobile.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
+                triggerNavFilter('nuevo');
+                if (mobileMenu) mobileMenu.classList.add('hidden');
             });
         }
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') hideModal();
-        });
 
-        // --- 5. LÓGICA DEL CARRITO DE COMPRAS + SELECTOR DE CANTIDAD ---
+        if (navRebajasMobile) {
+            navRebajasMobile.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
+                triggerNavFilter('rebajas');
+                if (mobileMenu) mobileMenu.classList.add('hidden');
+            });
+        }
+
+        // --- LÓGICA DEL CARRITO CON SELECTOR DE CANTIDAD ---
         let cart = [];
         const cartBtn = document.getElementById('cart-btn');
         const cartDrawer = document.getElementById('cart-drawer');
@@ -145,25 +132,26 @@ const menuBtn = document.getElementById('menu-btn');
         const checkoutWhatsappBtn = document.getElementById('checkout-whatsapp');
 
         function toggleCart() {
-            cartDrawer.classList.toggle('hidden');
-            document.body.style.overflow = cartDrawer.classList.contains('hidden') ? 'auto' : 'hidden';
+            if (cartDrawer) {
+                cartDrawer.classList.toggle('hidden');
+                document.body.style.overflow = cartDrawer.classList.contains('hidden') ? 'auto' : 'hidden';
+            }
         }
 
         if (cartBtn) cartBtn.addEventListener('click', toggleCart);
         if (closeCartBtn) closeCartBtn.addEventListener('click', toggleCart);
         if (cartOverlay) cartOverlay.addEventListener('click', toggleCart);
 
-        // Añadir producto leyendo la cantidad seleccionada en el input de la tarjeta
         addToCartButtons.forEach(button => {
             button.addEventListener('click', function () {
                 const name = this.getAttribute('data-name');
                 const price = parseFloat(this.getAttribute('data-price'));
                 const img = this.getAttribute('data-img');
                 
-                // Leer la cantidad del input dentro de la misma tarjeta del producto
+                // Lee el input de cantidad de esta tarjeta específica
                 const card = this.closest('.product-card');
                 const qtyInput = card.querySelector('.product-qty');
-                const quantity = parseInt(qtyInput.value) || 1;
+                const quantity = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
 
                 const existingProduct = cart.find(item => item.name === name);
                 if (existingProduct) {
@@ -173,10 +161,9 @@ const menuBtn = document.getElementById('menu-btn');
                 }
 
                 updateCartUI();
-                toggleCart(); // Abre el carrito automáticamente
+                toggleCart();
                 
-                // Reiniciar el input a 1
-                qtyInput.value = 1;
+                if (qtyInput) qtyInput.value = 1; // Resetea el input a 1
             });
         });
 
@@ -186,9 +173,9 @@ const menuBtn = document.getElementById('menu-btn');
             
             if (cart.length === 0) {
                 cartItemsContainer.innerHTML = `<p class="text-center text-gray-500 py-12 text-sm">Tu bolsa está vacía.</p>`;
-                cartTotalItems.innerText = '0';
-                cartCountBubble.innerText = '0';
-                cartSubtotal.innerText = '$0';
+                if (cartTotalItems) cartTotalItems.innerText = '0';
+                if (cartCountBubble) cartCountBubble.innerText = '0';
+                if (cartSubtotal) cartSubtotal.innerText = '$0';
                 return;
             }
 
@@ -212,9 +199,9 @@ const menuBtn = document.getElementById('menu-btn');
                 cartItemsContainer.appendChild(itemElement);
             });
 
-            cartTotalItems.innerText = totalItems;
-            cartCountBubble.innerText = totalItems;
-            cartSubtotal.innerText = `$${subtotal}`;
+            if (cartTotalItems) cartTotalItems.innerText = totalItems;
+            if (cartCountBubble) cartCountBubble.innerText = totalItems;
+            if (cartSubtotal) cartSubtotal.innerText = `$${subtotal}`;
         }
 
         window.removeItem = function(index) {
@@ -240,7 +227,7 @@ const menuBtn = document.getElementById('menu-btn');
 
                 message += `\n*Total a pagar: $${total}*\n\n¡Espero su respuesta para coordinar la entrega en Chivacoa, Yaracuy!`;
 
-                const phoneNumber = "584245628866"; 
+                const phoneNumber = "584120000000"; 
                 const encodedMessage = encodeURIComponent(message);
                 window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
             });
